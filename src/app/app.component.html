@@ -1,5 +1,17 @@
-<nz-card nzTitle="抽獎轉盤" style="width: 400px; margin: auto; text-align: center;">
-  <canvas #wheel width="300" height="300" style="margin-bottom: 20px;"></canvas>
-  <button nz-button nzType="primary">抽獎</button>
-</nz-card>
-
+<nz-layout>
+  <nz-header nzTheme="light">
+    <div class="logo">
+      <img src="kia.png" alt="Logo" width="90px" height="40px"/>
+      <span>線上抽獎</span>
+    </div>
+  </nz-header>
+  <nz-content>
+    <div class="main-content">
+      <div class="left-panel">
+        <lottery-wheel></lottery-wheel>
+      </div>
+    </div>
+  </nz-content>
+  <nz-divider></nz-divider>
+  <nz-footer>©2025</nz-footer>
+</nz-layout>
