@@ -9,14 +9,18 @@ import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { LotteryService } from './lottery-wheel.service';
-import { LotteryResult, Prize } from '../models/lottery.model';
+import { LotteryResult } from '../models/lottery.model';
+import { NzGridModule } from 'ng-zorro-antd/grid';
+import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
+import { NzIconModule } from 'ng-zorro-antd/icon';
 
 @Component({
   selector: 'lottery-wheel',
   imports: [
               CommonModule, FormsModule, NzCardModule,
               NzButtonModule, NzInputModule, NzFormModule,
-              NzDividerModule, NzTagModule
+              NzDividerModule, NzTagModule, NzGridModule,
+              ReactiveFormsModule, NzIconModule
             ],
   templateUrl: './lottery-wheel.component.html',
   styleUrl: './lottery-wheel.component.css'
@@ -28,8 +32,6 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
   prizes: any[] = [];
 
   isSpinning = false;
-
-  currentParticipant = '';
 
   lastWinner: LotteryResult | null = null;
 
@@ -47,14 +49,24 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
 
   random = Math.random();
 
+  form: FormGroup = new FormGroup({});
+
   constructor(
                 private lotteryService: LotteryService,
-                private message: NzMessageService
+                private message: NzMessageService,
+                private fb: FormBuilder
               ) { }
 
   ngOnInit(): void {
+    this.form = this.fb.group({
+      name: ['', [Validators.required]],
+      phone: ['', [Validators.required, Validators.pattern(/^09\d{8}$/)]]
+    });
   }
 
+  /**
+   * 初始化畫布和轉盤
+   */
   ngAfterViewInit(): void {
     if (!this.wheelCanvas) {
       console.error('wheelCanvas 尚未初始化');
@@ -76,34 +88,46 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
     this.loadPrizes();
   }
 
+  /**
+   * 獲取獎品列表
+   */
   loadPrizes(): void {
     this.lotteryService.getPrizes().subscribe(prizes => {
-      this.prizes = prizes.map(p => ({
-        ...p,
-        probability: (p.probability || 0) / 100
-      }));
-      this.drawWheel();
+      const totalWeight = prizes.reduce((sum, prize) => sum + prize.total_quantity, 0);
+
+      this.prizes = prizes.map(p => ({...p, probability: (p.probability || 0) / totalWeight}));
+
+      if (this.prizes.length > 0 && this.ctx) {
+        this.drawWheel();
+      }
     });
   }
 
-  drawWheel(): void {
-    if (!this.ctx) {
-      console.error('❌ ctx 沒初始化');
-      return;
-    }
-
+  /**
+   * 畫轉盤
+   */
+  drawWheel(angle: number = 0): void {
+    if (!this.ctx) return;
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
 
-    let startAngle = 0;
-    let endAngle = 0;
+    const angleOffset = -Math.PI / 2; // 調整轉盤起點到上方
+    const anglePerPrize = (Math.PI * 2) / this.prizes.length;
+    let startAngle = angle;
+    let endAngle = angle;
 
     for (let i = 0; i < this.prizes.length; i++) {
       const prize = this.prizes[i];
       startAngle = endAngle;
-      endAngle = startAngle + (Math.PI * 2 * prize.probability);
+      endAngle = startAngle + anglePerPrize;
 
       this.ctx.beginPath();
-      this.ctx.arc(this.centerX, this.centerY, this.radius, startAngle, endAngle);
+      this.ctx.arc(
+        this.centerX,
+        this.centerY,
+        this.radius,
+        startAngle + angleOffset,
+        endAngle + angleOffset
+      );
       this.ctx.lineTo(this.centerX, this.centerY);
       this.ctx.fillStyle = prize.color;
       this.ctx.fill();
@@ -111,9 +135,9 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
       // 畫文字
       this.ctx.save();
       this.ctx.translate(this.centerX, this.centerY);
-      this.ctx.rotate((startAngle + endAngle) / 2);
+      this.ctx.rotate((startAngle + endAngle) / 2 + angleOffset);
       this.ctx.fillStyle = 'white';
-      this.ctx.font = '20px Arial';
+      this.ctx.font = '18px Arial';
       this.ctx.textAlign = 'center';
       this.ctx.textBaseline = 'middle';
       this.ctx.fillText(prize.name, this.radius / 2, 0);
@@ -121,62 +145,92 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
     }
   }
 
+  /**
+   * 開始抽獎
+   */
   spin(): void {
-    if (this.isSpinning || !this.currentParticipant) {
-      this.message.warning('請先輸入姓名！');
-      return;
+    if (!this.form.valid) {
+      if (!this.form.get('name')?.value || !this.form.get('phone')?.value) {
+        this.message.warning('請先輸入姓名和電話！');
+        return;
+      }
+      if (this.form.get('phone')?.hasError('pattern')) {
+        this.message.warning('請輸入正確的手機號碼！');
+        return;
+      }
     }
     this.isSpinning = true;
 
-    this.lotteryService.drawLottery(this.currentParticipant).subscribe(
-      result => {
+    this.lotteryService.drawLottery(this.form.value).subscribe({
+      next: result => {
         this.lastWinner = result;
         const prizeIndex = this.prizes.findIndex(p => p.id === result.prize.id);
         if (prizeIndex === -1) {
           this.message.error('找不到中獎獎項，轉盤無法對應');
           return;
         }
+        console.log(this.prizes[prizeIndex]);
+        console.log(this.prizes);
         this.animateSpin(prizeIndex);
       },
-      error => {
-        this.message.error('抽獎失敗！');
-        this.isSpinning = false;
+      error: error => {
+        if (error?.error?.error === 'recordExists')
+        {
+          this.message.warning('已參加過抽獎，無法重複參加！');
+        }
+        else {
+          this.message.error('抽獎失敗，請稍後再試');
+        }
       }
-    );
+    });
   }
 
+  /**
+   * 動畫效果
+   * @param index
+   */
   animateSpin(index: number): void {
     if (!this.isSpinning) return;
 
     const count = this.prizes.length;
-    const anglePerPrize = 360 / count;
-    const targetAngle = 360 * 5 + (count - index) * anglePerPrize;
+    const anglePerPrize = 2 * Math.PI / count;
+    const targetAngle = 2 * Math.PI * 4 + (count - index - 0.5) * anglePerPrize;
+    const totalSpin = 2 * Math.PI * 4 + targetAngle;
+    const duration = 5000;
+    const start = performance.now();
 
-    const wheel = this.canvas
-    wheel.style.transition = 'transform 5s ease-out';
-    wheel.style.transform = `rotate(${targetAngle}deg)`;
+    const animate = (now: number) => {
+      const elapsed = now - start;
+      const progress = Math.min(elapsed / duration, 1);
+      const currentAngle = totalSpin * easeOut(progress);
 
-    setTimeout(() => {
-      this.showResult();
-      this.isSpinning = false;
-    }, 5000);
+      this.drawWheel(currentAngle);
+
+      if (progress < 1) {
+        requestAnimationFrame(animate);
+      }
+      else {
+        this.showResult();
+        this.isSpinning = false;
+      }
+    };
+
+    requestAnimationFrame(animate);
+
+    function easeOut(t: number) {
+      return 1 - Math.pow(1 - t, 3);
+    }
   }
 
+  /**
+   * 顯示抽獎結果
+   */
   showResult(): void {
     if (this.lastWinner) {
       this.message.success(`恭喜抽中 ${this.lastWinner.prize.name}！`);
     }
   }
 
-  resetWheel(): void {
-    if (this.canvas) {
-      this.canvas.style.transition = 'transform 1s ease-out';
-      this.canvas.style.transform = 'rotate(0deg)';
-    }
-    this.angle = 0;
-    this.isSpinning = false;
-    this.lastWinner = null;
-  }
 
 
 

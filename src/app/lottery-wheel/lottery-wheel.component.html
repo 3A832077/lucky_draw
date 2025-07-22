@@ -5,27 +5,47 @@
   </div>
 
   <div class="controls">
-    <nz-form-item>
-      <nz-form-label>姓名</nz-form-label>
-      <nz-form-control>
-        <input nz-input [(ngModel)]="currentParticipant" placeholder="請輸入姓名" />
-      </nz-form-control>
-    </nz-form-item>
 
-    <div class="buttonDiv">
-      <button nz-button nzType="primary" (click)="spin()">
-        開始抽獎
-      </button>
-      <button nz-button nzType="default" (click)="resetWheel()">
-        重置轉盤
-      </button>
-    </div>
-
-  </div>
-
-  <div class="result" *ngIf="lastWinner">
-    <p>
-      恭喜抽中 <strong>{{ lastWinner.prize.name }}</strong>！
-    </p>
+    <form [formGroup]="form" class="form-center">
+      <nz-row [nzGutter]="16" justify="center">
+        <nz-col nzSpan="12" nzXs="24" nzSm="12" nzMd="12" nzLg="12">
+          <nz-form-item>
+            <nz-form-label nzRequired>姓名</nz-form-label>
+            <nz-form-control>
+              <nz-input-group [nzSuffix]="clearName">
+                <input type="text" nz-input placeholder="請輸入姓名" formControlName="name"/>
+              </nz-input-group>
+            </nz-form-control>
+            <ng-template #clearName>
+              @if (form.get('name')?.value) {
+                <nz-icon class="ant-input-clear-icon" nzTheme="fill" nzType="close-circle"
+                (click)="form.get('name')?.setValue('')" />
+              }
+            </ng-template>
+          </nz-form-item>
+        </nz-col>
+        <nz-col nzSpan="12" nzXs="24" nzSm="12" nzMd="12" nzLg="12">
+          <nz-form-item>
+            <nz-form-label nzRequired>電話</nz-form-label>
+            <nz-form-control>
+              <nz-input-group [nzSuffix]="clearPhone">
+                <input type="text" nz-input placeholder="請輸入電話" formControlName="phone"/>
+              </nz-input-group>
+              <ng-template #clearPhone>
+                @if (form.get('phone')?.value) {
+                  <nz-icon class="ant-input-clear-icon" nzTheme="fill" nzType="close-circle"
+                  (click)="form.get('phone')?.setValue('')" />
+                }
+              </ng-template>
+            </nz-form-control>
+          </nz-form-item>
+        </nz-col>
+      </nz-row>
+      <div class="buttonDiv">
+        <button nz-button nzType="primary" (click)="spin()">
+          開始抽獎
+        </button>
+      </div>
+    </form>
   </div>
 </div>
