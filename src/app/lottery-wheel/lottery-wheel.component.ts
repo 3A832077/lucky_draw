@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit } from '@angular/core';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, TemplateRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -7,7 +7,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzMessageService } from 'ng-zorro-antd/message';
+import { NzMessageComponent, NzMessageService } from 'ng-zorro-antd/message';
 import { LotteryService } from './lottery-wheel.service';
 import { LotteryResult } from '../models/lottery.model';
 import { NzGridModule } from 'ng-zorro-antd/grid';
@@ -28,6 +28,11 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
 export class LotteryWheelComponent implements OnInit, AfterViewInit {
 
   @ViewChild('wheelCanvas', { static: true }) wheelCanvas!: ElementRef<HTMLCanvasElement>;
+
+  @ViewChild('resultTemplate', { static: true }) customTemplate!: TemplateRef<{
+    $implicit: NzMessageComponent;
+    data: string;
+  }>;
 
   prizes: any[] = [];
 
@@ -50,6 +55,8 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
   random = Math.random();
 
   form: FormGroup = new FormGroup({});
+
+  hasDrawn = false;
 
   constructor(
                 private lotteryService: LotteryService,
@@ -169,9 +176,8 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
           this.message.error('找不到中獎獎項，轉盤無法對應');
           return;
         }
-        console.log(this.prizes[prizeIndex]);
-        console.log(this.prizes);
         this.animateSpin(prizeIndex);
+        this.hasDrawn = true;
       },
       error: error => {
         if (error?.error?.error === 'recordExists')
@@ -227,7 +233,11 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
    */
   showResult(): void {
     if (this.lastWinner) {
-      this.message.success(`恭喜抽中 ${this.lastWinner.prize.name}！`);
+      this.message.info(this.customTemplate,
+        {
+          nzData: { prize: this.lastWinner.prize.name, color: this.lastWinner.prize.color || '#000' }
+        }
+      );
     }
   }
 

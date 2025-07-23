@@ -42,10 +42,16 @@
         </nz-col>
       </nz-row>
       <div class="buttonDiv">
-        <button nz-button nzType="primary" (click)="spin()">
+        <button nz-button nzType="primary" (click)="spin()" [disabled]="isSpinning || hasDrawn">
           開始抽獎
         </button>
       </div>
     </form>
   </div>
 </div>
+<ng-template #resultTemplate let-data="data">
+  <span style="font-weight: bold;">
+    恭喜抽中
+    <strong style="color: {{ data.color }};">{{ data.prize }}</strong>！
+  </span>
+</ng-template>

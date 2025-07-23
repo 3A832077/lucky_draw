@@ -40,7 +40,7 @@ nz-card {
 
 /* 訊息提示美化 */
 .ant-message {
-  top: 24px !important;
+  top: 30px !important;
 }
 
 .ant-message-notice-content {
