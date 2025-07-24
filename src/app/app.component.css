@@ -9,6 +9,7 @@
   width: 200px;
   height: 70px;
   float: left;
+  cursor: pointer;
 }
 
 nz-content {

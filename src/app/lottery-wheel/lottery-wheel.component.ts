@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, TemplateRef } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ViewChild, ElementRef, AfterViewInit, TemplateRef, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzButtonModule } from 'ng-zorro-antd/button';
@@ -61,7 +61,8 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
   constructor(
                 private lotteryService: LotteryService,
                 private message: NzMessageService,
-                private fb: FormBuilder
+                private fb: FormBuilder,
+                @Inject(PLATFORM_ID) private platformId: Object
               ) { }
 
   ngOnInit(): void {
@@ -75,23 +76,25 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
    * 初始化畫布和轉盤
    */
   ngAfterViewInit(): void {
+    if(isPlatformBrowser(this.platformId)) {
+      this.initCanvas();
+    }
+  }
+
+  initCanvas(): void {
     if (!this.wheelCanvas) {
       console.error('wheelCanvas 尚未初始化');
       return;
     }
-
     this.canvas = this.wheelCanvas.nativeElement;
-
     if (!this.canvas) {
       console.error('canvas 尚未取得');
       return;
     }
-
     this.ctx = this.canvas.getContext('2d')!;
     this.centerX = this.canvas.width / 2;
     this.centerY = this.canvas.height / 2;
     this.radius = Math.min(this.canvas.width, this.canvas.height) / 2;
-
     this.loadPrizes();
   }
 
@@ -102,7 +105,7 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
     this.lotteryService.getPrizes().subscribe(prizes => {
       const totalWeight = prizes.reduce((sum, prize) => sum + prize.total_quantity, 0);
 
-      this.prizes = prizes.map(p => ({...p, probability: (p.probability || 0) / totalWeight}));
+      this.prizes = prizes.map(p => ({...p, probability: (p.total_quantity || 0) / totalWeight}));
 
       if (this.prizes.length > 0 && this.ctx) {
         this.drawWheel();

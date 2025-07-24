@@ -7,10 +7,11 @@ import { registerLocaleData } from '@angular/common';
 import zh from '@angular/common/locales/zh';
 import { FormsModule } from '@angular/forms';
 import { provideAnimationsAsync } from '@angular/platform-browser/animations/async';
-import { provideHttpClient } from '@angular/common/http';
+import { provideHttpClient, withFetch } from '@angular/common/http';
 import { provideAnimations } from '@angular/platform-browser/animations';
 import { provideNzIcons } from 'ng-zorro-antd/icon';
 import { icons } from '../icon';
+import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 
 registerLocaleData(zh);
 
@@ -23,6 +24,8 @@ export const appConfig: ApplicationConfig = {
     provideAnimationsAsync(),
     provideHttpClient(),
     provideAnimations(),
-    provideNzIcons(icons)
+    provideNzIcons(icons),
+    provideClientHydration(withEventReplay()),
+    provideHttpClient(withFetch()),
   ]
 };

@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
+import { RouterLink } from '@angular/router';
 import { NzButtonModule } from 'ng-zorro-antd/button';
 import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzLayoutModule } from 'ng-zorro-antd/layout';
@@ -10,7 +10,7 @@ import { LotteryWheelComponent } from './lottery-wheel/lottery-wheel.component';
     selector: 'app-root',
     imports: [
                 NzButtonModule, NzCardModule,NzLayoutModule,
-                NzDividerModule, LotteryWheelComponent,
+                NzDividerModule, LotteryWheelComponent, RouterLink
              ],
     templateUrl: './app.component.html',
     styleUrl: './app.component.css'

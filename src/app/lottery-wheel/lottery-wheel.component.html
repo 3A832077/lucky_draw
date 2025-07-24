@@ -1,14 +1,18 @@
 <div class="div">
   <div class="wheel-container">
-    <canvas #wheelCanvas width="600" height="600"></canvas>
+    <canvas #wheelCanvas width="600" height="600" (click)="spin()"></canvas>
     <div id="pointer"></div>
+    <div id="pointer"></div>
+    <div class="wheel-tip" *ngIf="!hasDrawn">
+      點一下抽獎
+    </div>
   </div>
 
   <div class="controls">
 
     <form [formGroup]="form" class="form-center">
       <nz-row [nzGutter]="16" justify="center">
-        <nz-col nzSpan="12" nzXs="24" nzSm="12" nzMd="12" nzLg="12">
+        <nz-col nzSpan="24">
           <nz-form-item>
             <nz-form-label nzRequired>姓名</nz-form-label>
             <nz-form-control>
@@ -24,7 +28,7 @@
             </ng-template>
           </nz-form-item>
         </nz-col>
-        <nz-col nzSpan="12" nzXs="24" nzSm="12" nzMd="12" nzLg="12">
+        <nz-col nzSpan="24">
           <nz-form-item>
             <nz-form-label nzRequired>電話</nz-form-label>
             <nz-form-control>
