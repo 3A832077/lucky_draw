@@ -6,7 +6,7 @@
 }
 
 .logo {
-  width: 200px;
+  width: 480px;
   height: 70px;
   float: left;
   cursor: pointer;
@@ -48,8 +48,8 @@ nz-layout {
 }
 
 span{
-  font-size: 16px;
-  vertical-align: middle;
+  font-size: 24px;
+  vertical-align: sub;
   font-weight: 700;
 }
 

@@ -1,61 +1,33 @@
 <div class="div">
-  <div class="wheel-container">
-    <canvas #wheelCanvas width="600" height="600" (click)="spin()"></canvas>
-    <div id="pointer"></div>
-    <div id="pointer"></div>
-    <div class="wheel-tip" *ngIf="!hasDrawn">
-      點一下抽獎
-    </div>
+  <div class="title-bar">
+    <h2 class="wheel-title">
+      爸氣一試，帶豪禮回家!
+      購車試乘抽獎活動
+    </h2>
+    <button nz-button nzType="primary" (click)="spin()" [disabled]="isSpinning || hasDrawn">
+      開始抽獎
+    </button>
   </div>
 
-  <div class="controls">
-
-    <form [formGroup]="form" class="form-center">
-      <nz-row [nzGutter]="16" justify="center">
-        <nz-col nzSpan="24">
-          <nz-form-item>
-            <nz-form-label nzRequired>姓名</nz-form-label>
-            <nz-form-control>
-              <nz-input-group [nzSuffix]="clearName">
-                <input type="text" nz-input placeholder="請輸入姓名" formControlName="name"/>
-              </nz-input-group>
-            </nz-form-control>
-            <ng-template #clearName>
-              @if (form.get('name')?.value) {
-                <nz-icon class="ant-input-clear-icon" nzTheme="fill" nzType="close-circle"
-                (click)="form.get('name')?.setValue('')" />
-              }
-            </ng-template>
-          </nz-form-item>
-        </nz-col>
-        <nz-col nzSpan="24">
-          <nz-form-item>
-            <nz-form-label nzRequired>電話</nz-form-label>
-            <nz-form-control>
-              <nz-input-group [nzSuffix]="clearPhone">
-                <input type="text" nz-input placeholder="請輸入電話" formControlName="phone"/>
-              </nz-input-group>
-              <ng-template #clearPhone>
-                @if (form.get('phone')?.value) {
-                  <nz-icon class="ant-input-clear-icon" nzTheme="fill" nzType="close-circle"
-                  (click)="form.get('phone')?.setValue('')" />
-                }
-              </ng-template>
-            </nz-form-control>
-          </nz-form-item>
-        </nz-col>
-      </nz-row>
-      <div class="buttonDiv">
-        <button nz-button nzType="primary" (click)="spin()" [disabled]="isSpinning || hasDrawn">
-          開始抽獎
-        </button>
-      </div>
-    </form>
+  <div style="display: flex; justify-content: center; align-items: center; flex-wrap: wrap;">
+    <div class="wheel-container">
+      <canvas #wheelCanvas width="600" height="600" (click)="spin()"></canvas>
+      <div id="pointer"></div>
+      @if (!hasDrawn) {
+        <div class="wheel-tip">
+          點一下抽獎
+        </div>
+      }
+    </div>
   </div>
 </div>
 <ng-template #resultTemplate let-data="data">
-  <span style="font-weight: bold;">
+  <span style="font-weight: bold;font-size: 20px;text-align: center;">
     恭喜抽中
-    <strong style="color: {{ data.color }};">{{ data.prize }}</strong>！
+    <strong [style.color]="data.color">{{ data.prize }}</strong>！
+    <br>
+    <div style="margin-top: 10px;">
+      <img *ngIf="data.img" [src]="'/' + data.img + '.png'" style="height:200px;vertical-align:middle; display: inline-block;">
+    </div>
   </span>
 </ng-template>

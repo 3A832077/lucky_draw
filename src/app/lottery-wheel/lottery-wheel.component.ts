@@ -7,21 +7,21 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzFormModule } from 'ng-zorro-antd/form';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzTagModule } from 'ng-zorro-antd/tag';
-import { NzMessageComponent, NzMessageService } from 'ng-zorro-antd/message';
+import { NzMessageService } from 'ng-zorro-antd/message';
 import { LotteryService } from './lottery-wheel.service';
 import { LotteryResult } from '../models/lottery.model';
 import { NzGridModule } from 'ng-zorro-antd/grid';
-import { FormBuilder, FormGroup, Validators, ReactiveFormsModule } from '@angular/forms';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { type NzNotificationComponent, NzNotificationService } from 'ng-zorro-antd/notification';
 
 @Component({
   selector: 'lottery-wheel',
   imports: [
-              CommonModule, FormsModule, NzCardModule,
-              NzButtonModule, NzInputModule, NzFormModule,
-              NzDividerModule, NzTagModule, NzGridModule,
-              ReactiveFormsModule, NzIconModule
-            ],
+    CommonModule, FormsModule, NzCardModule,
+    NzButtonModule, NzInputModule, NzFormModule,
+    NzDividerModule, NzTagModule, NzGridModule,
+    NzIconModule,
+],
   templateUrl: './lottery-wheel.component.html',
   styleUrl: './lottery-wheel.component.css'
 })
@@ -29,9 +29,11 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
 
   @ViewChild('wheelCanvas', { static: true }) wheelCanvas!: ElementRef<HTMLCanvasElement>;
 
-  @ViewChild('resultTemplate', { static: true }) customTemplate!: TemplateRef<{
-    $implicit: NzMessageComponent;
-    data: string;
+  // @ViewChild('resultTemplate', { static: true }) customTemplate!: TemplateRef<any>;
+
+  @ViewChild('resultTemplate', { static: true }) template?: TemplateRef<{
+    $implicit: NzNotificationComponent;
+    data: { name: string; color: string; img: string };
   }>;
 
   prizes: any[] = [];
@@ -54,30 +56,26 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
 
   random = Math.random();
 
-  form: FormGroup = new FormGroup({});
-
   hasDrawn = false;
 
   constructor(
                 private lotteryService: LotteryService,
                 private message: NzMessageService,
-                private fb: FormBuilder,
-                @Inject(PLATFORM_ID) private platformId: Object
+                @Inject(PLATFORM_ID) private platformId: Object,
+                private notificationService: NzNotificationService
               ) { }
 
   ngOnInit(): void {
-    this.form = this.fb.group({
-      name: ['', [Validators.required]],
-      phone: ['', [Validators.required, Validators.pattern(/^09\d{8}$/)]]
-    });
   }
 
   /**
    * 初始化畫布和轉盤
    */
   ngAfterViewInit(): void {
-    if(isPlatformBrowser(this.platformId)) {
-      this.initCanvas();
+    if (isPlatformBrowser(this.platformId)) {
+      setTimeout(() => {
+        this.initCanvas();
+      }, 0);
     }
   }
 
@@ -159,19 +157,12 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
    * 開始抽獎
    */
   spin(): void {
-    if (!this.form.valid) {
-      if (!this.form.get('name')?.value || !this.form.get('phone')?.value) {
-        this.message.warning('請先輸入姓名和電話！');
-        return;
-      }
-      if (this.form.get('phone')?.hasError('pattern')) {
-        this.message.warning('請輸入正確的手機號碼！');
-        return;
-      }
+    if (this.hasDrawn) {
+      return;
     }
+    const params = {};
     this.isSpinning = true;
-
-    this.lotteryService.drawLottery(this.form.value).subscribe({
+    this.lotteryService.drawLottery(params).subscribe({
       next: result => {
         this.lastWinner = result;
         const prizeIndex = this.prizes.findIndex(p => p.id === result.prize.id);
@@ -183,11 +174,8 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
         this.hasDrawn = true;
       },
       error: error => {
-        if (error?.error?.error === 'recordExists')
+        if (error?.error?.error)
         {
-          this.message.warning('已參加過抽獎，無法重複參加！');
-        }
-        else {
           this.message.error('抽獎失敗，請稍後再試');
         }
       }
@@ -236,11 +224,11 @@ export class LotteryWheelComponent implements OnInit, AfterViewInit {
    */
   showResult(): void {
     if (this.lastWinner) {
-      this.message.info(this.customTemplate,
-        {
-          nzData: { prize: this.lastWinner.prize.name, color: this.lastWinner.prize.color || '#000' }
-        }
-      );
+      const prize = this.lastWinner.prize;
+      this.notificationService.template(this.template!, {
+        nzData: { prize: prize.name, color: prize.color, img: prize.picture },
+        nzPlacement: 'top',
+      });
     }
   }
 
